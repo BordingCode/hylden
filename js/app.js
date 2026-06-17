@@ -120,7 +120,7 @@ function setMode(m){
 function buildQueue(){ queue = sample(ALBUMS, ALBUMS.length); focused = 0; cfItems = []; }
 
 // itemsize scales with the screen; recomputed on resize
-function cfSize(){ return Math.min(Math.round(window.innerWidth*0.84), 380); }
+function cfSize(){ return Math.min(Math.round(window.innerWidth*0.92), 440); }
 
 function buildCoverflow(){
   el.cfTrack.innerHTML = '';
@@ -393,7 +393,7 @@ function toast(msg){
   clearTimeout(toastT); toastT=setTimeout(()=>n.remove(), 3200);
 }
 function registerSW(){
-  if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js?v=7').catch(()=>{});
+  if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js?v=8').catch(()=>{});
 }
 
 // Start only after the whole module has finished loading, so every const

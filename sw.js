@@ -1,12 +1,12 @@
 // ===== Hylden service worker =====
 // Bump CACHE when you change app-shell files so browsers fetch the new ones.
-const CACHE = 'hylden-v7';
+const CACHE = 'hylden-v8';
 const SHELL = [
   './', './index.html',
-  './css/style.css?v=7',
-  './js/app.js?v=7', './js/config.js', './js/auth.js',
+  './css/style.css?v=8',
+  './js/app.js?v=8', './js/config.js', './js/auth.js',
   './js/spotify.js', './js/demo.js',
-  './manifest.json?v=7',
+  './manifest.json?v=8',
   './icons/icon-192.png', './icons/icon-512.png',
 ];
 
