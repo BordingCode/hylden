@@ -9,10 +9,13 @@ export const CONFIG = {
   API: 'https://api.spotify.com/v1',
 };
 
-// The page's own address, used as the OAuth "redirect" target.
-// This exact value must be registered in the Spotify app's settings.
+// The OAuth "redirect" target. Spotify requires this to match a registered URI
+// EXACTLY (incl. trailing slash). Hardcode the live value so it never varies
+// with how the page was opened (e.g. /hylden/index.html vs /hylden/).
+const PROD_REDIRECT = 'https://bordingcode.github.io/hylden/';
 export function redirectUri(){
-  return location.origin + location.pathname;
+  if (location.hostname.endsWith('github.io')) return PROD_REDIRECT;
+  return location.origin + location.pathname;   // local dev only
 }
 
 export const hasClientId = () => CONFIG.CLIENT_ID.trim().length > 0;
