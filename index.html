@@ -5,13 +5,13 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1.0, user-scalable=no" />
   <meta name="theme-color" content="#08080b" />
   <title>Hylden — din pladehylde</title>
-  <link rel="manifest" href="manifest.json?v=8" />
+  <link rel="manifest" href="manifest.json?v=9" />
   <link rel="icon" href="icons/icon-192.png" />
   <link rel="apple-touch-icon" href="icons/icon-192.png" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="apple-mobile-web-app-title" content="Hylden" />
-  <link rel="stylesheet" href="css/style.css?v=8" />
+  <link rel="stylesheet" href="css/style.css?v=9" />
 </head>
 <body>
   <!-- Full-screen blurred backdrop of the current album -->
@@ -67,10 +67,10 @@
         </div>
       </section>
 
-      <!-- Flip view: Cover Flow rack, always shuffled -->
+      <!-- Flip view: one album at a time, always shuffled -->
       <section class="flip" id="flip" hidden>
-        <div class="coverflow" id="coverflow">
-          <div class="cf-track" id="cf-track"></div>
+        <div class="single" id="single">
+          <img id="single-img" class="single-img" alt="" />
         </div>
         <div class="flip-meta" id="flip-meta">
           <h2 class="flip-title" id="flip-title"></h2>
@@ -83,7 +83,7 @@
           <button id="flip-shuffle" class="flip-shuffle">Bland igen</button>
           <button id="flip-next" class="flip-arrow" aria-label="Næste">›</button>
         </div>
-        <p class="flip-hint">Stryg gennem reolen, eller tryk på et cover · altid tilfældig rækkefølge</p>
+        <p class="flip-hint">Stryg, eller brug pilene · altid tilfældig rækkefølge</p>
       </section>
 
       <!-- The shelf -->
@@ -118,6 +118,6 @@
     </div>
   </div>
 
-  <script type="module" src="js/app.js?v=8"></script>
+  <script type="module" src="js/app.js?v=9"></script>
 </body>
 </html>

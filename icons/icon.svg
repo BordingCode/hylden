@@ -1,24 +1,21 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
   <defs>
-    <radialGradient id="bg" cx="50%" cy="40%" r="75%">
-      <stop offset="0" stop-color="#17171d"/><stop offset="1" stop-color="#08080b"/>
-    </radialGradient>
-    <radialGradient id="disc" cx="50%" cy="50%" r="50%">
-      <stop offset="0" stop-color="#26262e"/><stop offset="1" stop-color="#0c0c10"/>
-    </radialGradient>
-    <radialGradient id="lab" cx="50%" cy="50%" r="50%">
-      <stop offset="0" stop-color="#f2f2f6"/><stop offset="1" stop-color="#b9b9c4"/>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#15151a"/><stop offset="1" stop-color="#08080b"/>
+    </linearGradient>
+    <radialGradient id="disc" cx="42%" cy="38%" r="70%">
+      <stop offset="0" stop-color="#fdfdff"/><stop offset="1" stop-color="#cdcdd6"/>
     </radialGradient>
   </defs>
-  <rect width="512" height="512" rx="112" fill="url(#bg)"/>
-  <!-- minimal monochrome vinyl -->
-  <circle cx="256" cy="256" r="168" fill="url(#disc)"/>
-  <g fill="none" stroke="#3a3a44" stroke-width="2.5" opacity=".85">
-    <circle cx="256" cy="256" r="150"/><circle cx="256" cy="256" r="128"/>
-    <circle cx="256" cy="256" r="106"/><circle cx="256" cy="256" r="84"/>
+  <rect width="512" height="512" rx="116" fill="url(#bg)"/>
+  <!-- clean white vinyl disc, matching the in-app brand mark -->
+  <circle cx="256" cy="256" r="158" fill="url(#disc)"/>
+  <g fill="none" stroke="#0a0a0c" opacity=".10" stroke-width="3">
+    <circle cx="256" cy="256" r="134"/><circle cx="256" cy="256" r="112"/><circle cx="256" cy="256" r="90"/>
   </g>
-  <circle cx="256" cy="256" r="54" fill="url(#lab)"/>
-  <circle cx="256" cy="256" r="9" fill="#08080b"/>
-  <!-- subtle sheen -->
-  <path d="M150 150 A168 168 0 0 1 380 150" fill="none" stroke="#ffffff" stroke-width="6" opacity=".08" stroke-linecap="round"/>
+  <!-- dark centre + spindle hole, like the wordmark's disc -->
+  <circle cx="256" cy="256" r="50" fill="#0a0a0c"/>
+  <circle cx="256" cy="256" r="10" fill="#2a2a30"/>
+  <!-- soft top sheen -->
+  <path d="M150 150 A158 158 0 0 1 372 150" fill="none" stroke="#ffffff" stroke-width="7" opacity=".22" stroke-linecap="round"/>
 </svg>

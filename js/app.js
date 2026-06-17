@@ -8,7 +8,7 @@ const $ = (s) => document.querySelector(s);
 const el = {
   account:$('#account'), toolbar:$('#toolbar'), welcome:$('#welcome'),
   backdrop:$('#backdrop'),
-  flip:$('#flip'), coverflow:$('#coverflow'), cfTrack:$('#cf-track'),
+  flip:$('#flip'), single:$('#single'), singleImg:$('#single-img'),
   flipTitle:$('#flip-title'), flipArtist:$('#flip-artist'), flipYear:$('#flip-year'),
   flipPlay:$('#flip-play'),
   shelfArea:$('#shelf-area'), shelf:$('#shelf'), loading:$('#loading'),
@@ -24,10 +24,9 @@ let view = [];          // filtered/sorted view (grid)
 let sort = 'added';
 let query = '';
 let demo = false;
-let mode = 'flip';      // 'flip' (Cover Flow rack) | 'grid' (whole shelf)
+let mode = 'flip';      // 'flip' (one album at a time) | 'grid' (whole shelf)
 let queue = [];         // shuffled album order for flip view
-let focused = 0;        // index of the front album in the rack
-let cfItems = [];       // [{el, img}] one per album in queue
+let focused = 0;        // index of the album on screen
 
 // ---------- boot ----------
 async function boot(){
@@ -101,7 +100,7 @@ function enterApp(){
   setMode(mode);
 }
 
-// ---------- flip view (Cover Flow rack, shuffled) ----------
+// ---------- flip view (one album at a time, shuffled) ----------
 function setMode(m){
   mode = m;
   el.viewtoggle.querySelectorAll('.vt').forEach(b=>b.classList.toggle('is-active', b.dataset.mode===m));
@@ -110,99 +109,38 @@ function setMode(m){
   el.shelfArea.hidden = flipMode;
   el.gridControls.hidden = flipMode;
   document.body.classList.toggle('grid-mode', !flipMode);
-  if (flipMode){
-    if (!queue.length) buildQueue();
-    if (cfItems.length !== queue.length) buildCoverflow();
-    layoutCoverflow(); updateFlipMeta();
-  }
+  if (flipMode){ if (!queue.length) buildQueue(); showSingle(); }
 }
 
-function buildQueue(){ queue = sample(ALBUMS, ALBUMS.length); focused = 0; cfItems = []; }
+function buildQueue(){ queue = sample(ALBUMS, ALBUMS.length); focused = 0; }
 
-// itemsize scales with the screen; recomputed on resize
-function cfSize(){ return Math.min(Math.round(window.innerWidth*0.92), 440); }
-
-function buildCoverflow(){
-  el.cfTrack.innerHTML = '';
-  cfItems = queue.map((a, i)=>{
-    const node = document.createElement('div');
-    node.className = 'cf-item';
-    const img = document.createElement('img');
-    img.alt = a.name; img.dataset.src = a.coverSmall || a.cover;
-    node.appendChild(img);
-    node.addEventListener('click', ()=>{
-      if (i === focused){ if (!demo) window.open(queue[i].url, '_blank', 'noopener'); }
-      else setFocus(i);
-    });
-    el.cfTrack.appendChild(node);
-    return { el:node, img };
-  });
-  setCfSizes();
-}
-
-function setCfSizes(){
-  const s = cfSize();
-  // centering is handled by translate(-50%,-50%) in the transform — no margins here
-  cfItems.forEach(({el})=>{ el.style.width = s+'px'; el.style.height = s+'px'; });
-}
-
-const CF_VISIBLE = 2;   // covers shown on each side of the front (they only peek)
-function layoutCoverflow(){
-  const s = cfSize();
-  const N = cfItems.length;
-  cfItems.forEach(({el:node, img}, i)=>{
-    let d = i - focused;
-    if (N > 1){ if (d > N/2) d -= N; else if (d < -N/2) d += N; }  // shortest way round the ring
-    const ad = Math.abs(d), sign = Math.sign(d);
-
-    // Off-screen covers: don't render them at all (big perf win on large libraries)
-    if (ad > CF_VISIBLE){
-      node.style.display = 'none';
-      node.classList.remove('is-front');
-      if (img.src) img.removeAttribute('src');
-      return;
-    }
-    node.style.display = '';
-    if (!img.src) img.src = img.dataset.src;
-
-    let x, ry, tz, scale, opacity, z;
-    if (d === 0){ x=0; ry=0; tz=60; scale=1; opacity=1; z=1000; }
-    else {
-      x = sign * (s*0.84 + (ad-1)*s*0.56);   // pushed well out → sides only peek
-      ry = -sign * 52;
-      tz = -110 - (ad-1)*80;
-      scale = 0.82;
-      opacity = ad===1 ? 0.9 : 0.45;
-      z = 1000 - ad;
-    }
-    node.classList.toggle('is-front', d===0);
-    node.style.transform =
-      `translate(-50%,-50%) translateX(${x}px) translateZ(${tz}px) rotateY(${ry}deg) scale(${scale})`;
-    node.style.opacity = opacity;
-    node.style.zIndex = z;
-  });
-}
-
-function updateFlipMeta(){
+// Show the focused album; `dir` ('next'|'prev') plays a slide-in animation.
+function showSingle(dir){
   const a = queue[focused]; if (!a) return;
+  el.singleImg.src = a.cover || a.coverSmall;
+  el.singleImg.alt = a.name;
   el.flipTitle.textContent = a.name;
   el.flipArtist.textContent = a.artist;
   el.flipYear.textContent = a.year ? `Udgivet ${a.year}` : '';
   el.flipPlay.href = a.url;
   el.flipPlay.style.display = demo ? 'none' : '';
   el.backdrop.style.backgroundImage = `url("${a.coverSmall || a.cover}")`;  // small img — it's blurred anyway
+  if (dir){
+    el.singleImg.classList.remove('in-r','in-l');
+    void el.singleImg.offsetWidth;          // restart the animation
+    el.singleImg.classList.add(dir==='next' ? 'in-r' : 'in-l');
+  }
 }
 
 function setFocus(i){
   const N = queue.length; if (!N) return;
-  focused = ((i % N) + N) % N;           // wrap around the ring
-  layoutCoverflow(); updateFlipMeta();
+  focused = ((i % N) + N) % N;              // wrap around
 }
-function flipNext(){ setFocus(focused+1); }
-function flipPrev(){ setFocus(focused-1); }
+function flipNext(){ if (queue.length){ setFocus(focused+1); showSingle('next'); } }
+function flipPrev(){ if (queue.length){ setFocus(focused-1); showSingle('prev'); } }
 
 function reshuffle(){
-  buildQueue(); buildCoverflow(); layoutCoverflow(); updateFlipMeta();
+  buildQueue(); showSingle();
   if (queue.length>1) toast('Blandet igen');
 }
 
@@ -348,16 +286,18 @@ function wireEvents(){
   $('#flip-next').addEventListener('click', flipNext);
   $('#flip-prev').addEventListener('click', flipPrev);
   $('#flip-shuffle').addEventListener('click', reshuffle);
-  window.addEventListener('resize', ()=>{
-    if (mode==='flip' && !el.flip.hidden){ setCfSizes(); layoutCoverflow(); }
-  });
-  // swipe left/right through the rack
-  let sx=0, sy=0;
-  el.coverflow.addEventListener('touchstart', (e)=>{ const t=e.changedTouches[0]; sx=t.clientX; sy=t.clientY; }, {passive:true});
-  el.coverflow.addEventListener('touchend', (e)=>{
+  // swipe left/right to change album; a plain tap opens it in Spotify
+  let sx=0, sy=0, swiped=false;
+  el.single.addEventListener('touchstart', (e)=>{ const t=e.changedTouches[0]; sx=t.clientX; sy=t.clientY; swiped=false; }, {passive:true});
+  el.single.addEventListener('touchend', (e)=>{
     const t=e.changedTouches[0], dx=t.clientX-sx, dy=t.clientY-sy;
-    if (Math.abs(dx)>40 && Math.abs(dx)>Math.abs(dy)) (dx<0 ? flipNext() : flipPrev());
+    if (Math.abs(dx)>40 && Math.abs(dx)>Math.abs(dy)){ swiped=true; (dx<0 ? flipNext() : flipPrev()); }
   }, {passive:true});
+  el.single.addEventListener('click', ()=>{
+    if (swiped){ swiped=false; return; }     // don't open on a swipe
+    const a = queue[focused];
+    if (a && !demo) window.open(a.url, '_blank', 'noopener');
+  });
 
   el.sorts.addEventListener('click', (e)=>{
     const b = e.target.closest('.chip'); if (!b) return;
@@ -393,7 +333,7 @@ function toast(msg){
   clearTimeout(toastT); toastT=setTimeout(()=>n.remove(), 3200);
 }
 function registerSW(){
-  if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js?v=8').catch(()=>{});
+  if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js?v=9').catch(()=>{});
 }
 
 // Start only after the whole module has finished loading, so every const

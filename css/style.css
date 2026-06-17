@@ -131,26 +131,19 @@ body.grid-mode .backdrop{filter:blur(14px) brightness(.28) saturate(1.05);}
 }
 .reassure{margin-top:20px !important;font-size:12.5px !important;color:var(--muted) !important;}
 
-/* ===== Flip view — Cover Flow rack ===== */
-.flip{display:flex;flex-direction:column;align-items:center;padding:4px 0 26px;}
-.coverflow{
-  position:relative;width:100vw;max-width:920px;height:min(124vw,520px);
-  perspective:1500px;overflow:hidden;
+/* ===== Flip view — one album at a time ===== */
+.flip{display:flex;flex-direction:column;align-items:center;padding:8px 0 26px;}
+.single{width:100%;display:flex;justify-content:center;padding:6px 0 4px;}
+.single-img{
+  width:min(84vw,420px);aspect-ratio:1/1;object-fit:cover;border-radius:10px;
+  background:#18181d;box-shadow:0 30px 60px rgba(0,0,0,.62);
+  -webkit-box-reflect:below 4px linear-gradient(transparent 58%, rgba(0,0,0,.24));
+  will-change:transform,opacity;
 }
-.cf-track{position:absolute;inset:0;transform-style:preserve-3d;}
-.cf-item{
-  position:absolute;left:50%;top:41%;
-  transition:transform .38s cubic-bezier(.22,.85,.28,1), opacity .38s;
-  cursor:pointer;backface-visibility:hidden;will-change:transform;
-}
-.cf-item img{
-  width:100%;height:100%;display:block;object-fit:cover;border-radius:8px;
-  background:#18181d;box-shadow:0 24px 50px rgba(0,0,0,.7);
-}
-/* reflection only under the front cover — cheap, and the sides barely peek anyway */
-.cf-item.is-front img{
-  -webkit-box-reflect:below 3px linear-gradient(transparent 56%, rgba(0,0,0,.28));
-}
+.single-img.in-r{animation:sIn-r .28s ease;}
+.single-img.in-l{animation:sIn-l .28s ease;}
+@keyframes sIn-r{from{opacity:0;transform:translateX(34px);}to{opacity:1;transform:translateX(0);}}
+@keyframes sIn-l{from{opacity:0;transform:translateX(-34px);}to{opacity:1;transform:translateX(0);}}
 
 .flip-meta{text-align:center;margin-top:6px;min-height:120px;padding:0 18px;}
 .flip-title{font-size:25px;font-weight:700;letter-spacing:-.01em;margin:0 0 3px;line-height:1.2;text-shadow:0 2px 14px rgba(0,0,0,.5);}
