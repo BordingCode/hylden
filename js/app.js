@@ -120,7 +120,7 @@ function setMode(m){
 function buildQueue(){ queue = sample(ALBUMS, ALBUMS.length); focused = 0; cfItems = []; }
 
 // itemsize scales with the screen; recomputed on resize
-function cfSize(){ return Math.min(Math.round(window.innerWidth*0.72), 340); }
+function cfSize(){ return Math.min(Math.round(window.innerWidth*0.84), 380); }
 
 function buildCoverflow(){
   el.cfTrack.innerHTML = '';
@@ -146,6 +146,7 @@ function setCfSizes(){
   cfItems.forEach(({el})=>{ el.style.width = s+'px'; el.style.height = s+'px'; });
 }
 
+const CF_VISIBLE = 2;   // covers shown on each side of the front (they only peek)
 function layoutCoverflow(){
   const s = cfSize();
   const N = cfItems.length;
@@ -153,24 +154,32 @@ function layoutCoverflow(){
     let d = i - focused;
     if (N > 1){ if (d > N/2) d -= N; else if (d < -N/2) d += N; }  // shortest way round the ring
     const ad = Math.abs(d), sign = Math.sign(d);
+
+    // Off-screen covers: don't render them at all (big perf win on large libraries)
+    if (ad > CF_VISIBLE){
+      node.style.display = 'none';
+      node.classList.remove('is-front');
+      if (img.src) img.removeAttribute('src');
+      return;
+    }
+    node.style.display = '';
+    if (!img.src) img.src = img.dataset.src;
+
     let x, ry, tz, scale, opacity, z;
-    if (d === 0){ x=0; ry=0; tz=70; scale=1; opacity=1; z=1000; }
+    if (d === 0){ x=0; ry=0; tz=60; scale=1; opacity=1; z=1000; }
     else {
-      x = sign * (s*0.60 + (ad-1)*s*0.42);
-      ry = -sign * 48;
-      tz = -s*0.5 - (ad-1)*44;
-      scale = 0.94;
-      opacity = ad>4 ? 0 : Math.max(0, 1 - (ad-1)*0.26);
+      x = sign * (s*0.84 + (ad-1)*s*0.56);   // pushed well out → sides only peek
+      ry = -sign * 52;
+      tz = -110 - (ad-1)*80;
+      scale = 0.82;
+      opacity = ad===1 ? 0.9 : 0.45;
       z = 1000 - ad;
     }
+    node.classList.toggle('is-front', d===0);
     node.style.transform =
       `translate(-50%,-50%) translateX(${x}px) translateZ(${tz}px) rotateY(${ry}deg) scale(${scale})`;
     node.style.opacity = opacity;
     node.style.zIndex = z;
-    node.style.pointerEvents = ad>4 ? 'none' : 'auto';
-    // load only nearby covers; release far ones
-    if (ad <= 5){ if (!img.src) img.src = img.dataset.src; }
-    else if (img.src){ img.removeAttribute('src'); }
   });
 }
 
@@ -181,7 +190,7 @@ function updateFlipMeta(){
   el.flipYear.textContent = a.year ? `Udgivet ${a.year}` : '';
   el.flipPlay.href = a.url;
   el.flipPlay.style.display = demo ? 'none' : '';
-  el.backdrop.style.backgroundImage = `url("${a.cover || a.coverSmall}")`;
+  el.backdrop.style.backgroundImage = `url("${a.coverSmall || a.cover}")`;  // small img — it's blurred anyway
 }
 
 function setFocus(i){
@@ -384,7 +393,7 @@ function toast(msg){
   clearTimeout(toastT); toastT=setTimeout(()=>n.remove(), 3200);
 }
 function registerSW(){
-  if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js?v=6').catch(()=>{});
+  if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js?v=7').catch(()=>{});
 }
 
 // Start only after the whole module has finished loading, so every const

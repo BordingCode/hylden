@@ -19,9 +19,8 @@ body{
 
 /* ===== Backdrop (blurred current cover) ===== */
 .backdrop{
-  position:fixed;inset:-12%;z-index:-2;background:var(--bg) center/cover no-repeat;
-  filter:blur(48px) brightness(.46) saturate(1.15);transform:scale(1.12);
-  transition:background-image .5s ease, opacity .5s ease;
+  position:fixed;inset:-8%;z-index:-2;background:var(--bg) center/cover no-repeat;
+  filter:blur(30px) brightness(.46) saturate(1.1);transform:scale(1.08) translateZ(0);
 }
 .scrim{
   position:fixed;inset:0;z-index:-1;pointer-events:none;
@@ -130,21 +129,24 @@ body.grid-mode .backdrop{filter:blur(60px) brightness(.3) saturate(1.05);}
 /* ===== Flip view — Cover Flow rack ===== */
 .flip{display:flex;flex-direction:column;align-items:center;padding:4px 0 26px;}
 .coverflow{
-  position:relative;width:100vw;max-width:920px;height:min(92vw,440px);
-  perspective:1300px;overflow:hidden;
+  position:relative;width:100vw;max-width:920px;height:min(112vw,470px);
+  perspective:1400px;overflow:hidden;
   -webkit-mask-image:linear-gradient(90deg, transparent 0, #000 10%, #000 90%, transparent 100%);
           mask-image:linear-gradient(90deg, transparent 0, #000 10%, #000 90%, transparent 100%);
 }
 .cf-track{position:absolute;inset:0;transform-style:preserve-3d;}
 .cf-item{
-  position:absolute;left:50%;top:44%;
-  transition:transform .44s cubic-bezier(.22,.85,.28,1), opacity .44s;
-  will-change:transform;cursor:pointer;
+  position:absolute;left:50%;top:42%;
+  transition:transform .4s cubic-bezier(.22,.85,.28,1), opacity .4s;
+  cursor:pointer;backface-visibility:hidden;
 }
 .cf-item img{
   width:100%;height:100%;display:block;object-fit:cover;border-radius:8px;
   background:#18181d;box-shadow:0 24px 50px rgba(0,0,0,.7);
-  -webkit-box-reflect:below 3px linear-gradient(transparent 56%, rgba(0,0,0,.3));
+}
+/* reflection only under the front cover — cheap, and the sides barely peek anyway */
+.cf-item.is-front img{
+  -webkit-box-reflect:below 3px linear-gradient(transparent 56%, rgba(0,0,0,.28));
 }
 
 .flip-meta{text-align:center;margin-top:6px;min-height:120px;padding:0 18px;}
