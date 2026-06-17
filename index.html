@@ -5,13 +5,13 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1.0, user-scalable=no" />
   <meta name="theme-color" content="#2b1d14" />
   <title>Hylden — din pladehylde</title>
-  <link rel="manifest" href="manifest.json?v=4" />
+  <link rel="manifest" href="manifest.json?v=5" />
   <link rel="icon" href="icons/icon-192.png" />
   <link rel="apple-touch-icon" href="icons/icon-192.png" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="apple-mobile-web-app-title" content="Hylden" />
-  <link rel="stylesheet" href="css/style.css?v=4" />
+  <link rel="stylesheet" href="css/style.css?v=5" />
 </head>
 <body>
   <div id="app">
@@ -66,22 +66,23 @@
         </div>
       </section>
 
-      <!-- Flip view: one album at a time, always shuffled -->
+      <!-- Flip view: Cover Flow rack, always shuffled -->
       <section class="flip" id="flip" hidden>
-        <div class="flip-stage" id="flip-stage">
-          <div class="flip-card" id="flip-card">
-            <div class="flip-cover"><img id="flip-img" alt="" /></div>
-            <h2 class="flip-title" id="flip-title"></h2>
-            <p class="flip-artist" id="flip-artist"></p>
-            <p class="flip-year" id="flip-year"></p>
-            <a id="flip-play" class="btn-spotify" target="_blank" rel="noopener">▶ Afspil i Spotify</a>
-          </div>
+        <div class="coverflow" id="coverflow">
+          <div class="cf-track" id="cf-track"></div>
+        </div>
+        <div class="flip-meta" id="flip-meta">
+          <h2 class="flip-title" id="flip-title"></h2>
+          <p class="flip-artist" id="flip-artist"></p>
+          <p class="flip-year" id="flip-year"></p>
+          <a id="flip-play" class="btn-spotify" target="_blank" rel="noopener">▶ Afspil i Spotify</a>
         </div>
         <div class="flip-nav">
           <button id="flip-prev" class="flip-arrow" aria-label="Forrige">‹</button>
-          <button id="flip-next" class="flip-next">Næste plade ›</button>
+          <button id="flip-shuffle" class="flip-shuffle">🔀 Bland igen</button>
+          <button id="flip-next" class="flip-arrow" aria-label="Næste">›</button>
         </div>
-        <p class="flip-hint">Stryg til siden, eller tryk <b>Næste</b> · altid tilfældig rækkefølge</p>
+        <p class="flip-hint">Stryg gennem reolen, eller tryk på et cover · altid tilfældig rækkefølge</p>
       </section>
 
       <!-- The shelf -->
@@ -116,6 +117,6 @@
     </div>
   </div>
 
-  <script type="module" src="js/app.js?v=4"></script>
+  <script type="module" src="js/app.js?v=5"></script>
 </body>
 </html>

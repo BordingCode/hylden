@@ -7,7 +7,7 @@ import { demoAlbums } from './demo.js';
 const $ = (s) => document.querySelector(s);
 const el = {
   account:$('#account'), toolbar:$('#toolbar'), welcome:$('#welcome'),
-  flip:$('#flip'), flipCard:$('#flip-card'), flipImg:$('#flip-img'),
+  flip:$('#flip'), coverflow:$('#coverflow'), cfTrack:$('#cf-track'),
   flipTitle:$('#flip-title'), flipArtist:$('#flip-artist'), flipYear:$('#flip-year'),
   flipPlay:$('#flip-play'),
   shelfArea:$('#shelf-area'), shelf:$('#shelf'), loading:$('#loading'),
@@ -23,9 +23,10 @@ let view = [];          // filtered/sorted view (grid)
 let sort = 'added';
 let query = '';
 let demo = false;
-let mode = 'flip';      // 'flip' (one at a time) | 'grid' (whole shelf)
+let mode = 'flip';      // 'flip' (Cover Flow rack) | 'grid' (whole shelf)
 let queue = [];         // shuffled album order for flip view
-let qIndex = 0;
+let focused = 0;        // index of the front album in the rack
+let cfItems = [];       // [{el, img}] one per album in queue
 
 // ---------- boot ----------
 async function boot(){
@@ -99,7 +100,7 @@ function enterApp(){
   setMode(mode);
 }
 
-// ---------- flip view (one album at a time, shuffled) ----------
+// ---------- flip view (Cover Flow rack, shuffled) ----------
 function setMode(m){
   mode = m;
   el.viewtoggle.querySelectorAll('.vt').forEach(b=>b.classList.toggle('is-active', b.dataset.mode===m));
@@ -107,42 +108,90 @@ function setMode(m){
   el.flip.hidden = !flipMode;
   el.shelfArea.hidden = flipMode;
   el.gridControls.hidden = flipMode;
-  if (flipMode){ if (!queue.length) buildQueue(); showFlip(); }
+  if (flipMode){
+    if (!queue.length) buildQueue();
+    if (cfItems.length !== queue.length) buildCoverflow();
+    layoutCoverflow(); updateFlipMeta();
+  }
 }
 
-function buildQueue(){ queue = sample(ALBUMS, ALBUMS.length); qIndex = 0; }
+function buildQueue(){ queue = sample(ALBUMS, ALBUMS.length); focused = 0; cfItems = []; }
 
-function showFlip(dir){
-  const a = queue[qIndex];
-  if (!a) return;
-  el.flipImg.src = a.cover || a.coverSmall;
-  el.flipImg.alt = a.name;
+// itemsize scales with the screen; recomputed on resize
+function cfSize(){ return Math.min(Math.round(window.innerWidth*0.52), 210); }
+
+function buildCoverflow(){
+  el.cfTrack.innerHTML = '';
+  cfItems = queue.map((a, i)=>{
+    const node = document.createElement('div');
+    node.className = 'cf-item';
+    const img = document.createElement('img');
+    img.alt = a.name; img.dataset.src = a.coverSmall || a.cover;
+    node.appendChild(img);
+    node.addEventListener('click', ()=>{
+      if (i === focused){ if (!demo) window.open(queue[i].url, '_blank', 'noopener'); }
+      else setFocus(i);
+    });
+    el.cfTrack.appendChild(node);
+    return { el:node, img };
+  });
+  setCfSizes();
+}
+
+function setCfSizes(){
+  const s = cfSize();
+  // centering is handled by translate(-50%,-50%) in the transform — no margins here
+  cfItems.forEach(({el})=>{ el.style.width = s+'px'; el.style.height = s+'px'; });
+}
+
+function layoutCoverflow(){
+  const s = cfSize();
+  const N = cfItems.length;
+  cfItems.forEach(({el:node, img}, i)=>{
+    let d = i - focused;
+    if (N > 1){ if (d > N/2) d -= N; else if (d < -N/2) d += N; }  // shortest way round the ring
+    const ad = Math.abs(d), sign = Math.sign(d);
+    let x, ry, tz, scale, opacity, z;
+    if (d === 0){ x=0; ry=0; tz=70; scale=1; opacity=1; z=1000; }
+    else {
+      x = sign * (s*0.60 + (ad-1)*s*0.42);
+      ry = -sign * 48;
+      tz = -s*0.5 - (ad-1)*44;
+      scale = 0.94;
+      opacity = ad>4 ? 0 : Math.max(0, 1 - (ad-1)*0.26);
+      z = 1000 - ad;
+    }
+    node.style.transform =
+      `translate(-50%,-50%) translateX(${x}px) translateZ(${tz}px) rotateY(${ry}deg) scale(${scale})`;
+    node.style.opacity = opacity;
+    node.style.zIndex = z;
+    node.style.pointerEvents = ad>4 ? 'none' : 'auto';
+    // load only nearby covers; release far ones
+    if (ad <= 5){ if (!img.src) img.src = img.dataset.src; }
+    else if (img.src){ img.removeAttribute('src'); }
+  });
+}
+
+function updateFlipMeta(){
+  const a = queue[focused]; if (!a) return;
   el.flipTitle.textContent = a.name;
   el.flipArtist.textContent = a.artist;
   el.flipYear.textContent = a.year ? `Udgivet ${a.year}` : '';
   el.flipPlay.href = a.url;
   el.flipPlay.style.display = demo ? 'none' : '';
-  if (dir){
-    el.flipCard.classList.remove('in-right','in-left');
-    void el.flipCard.offsetWidth;                 // restart the animation
-    el.flipCard.classList.add(dir==='next'?'in-right':'in-left');
-  }
 }
 
-function flipNext(){
-  if (!queue.length) return;
-  qIndex++;
-  if (qIndex >= queue.length){                    // ran through all → reshuffle
-    const last = queue[queue.length-1];
-    buildQueue();
-    if (queue.length>1 && queue[0].id===last.id){ [queue[0],queue[1]]=[queue[1],queue[0]]; }
-  }
-  showFlip('next');
+function setFocus(i){
+  const N = queue.length; if (!N) return;
+  focused = ((i % N) + N) % N;           // wrap around the ring
+  layoutCoverflow(); updateFlipMeta();
 }
-function flipPrev(){
-  if (!queue.length) return;
-  qIndex = qIndex>0 ? qIndex-1 : queue.length-1;
-  showFlip('prev');
+function flipNext(){ setFocus(focused+1); }
+function flipPrev(){ setFocus(focused-1); }
+
+function reshuffle(){
+  buildQueue(); buildCoverflow(); layoutCoverflow(); updateFlipMeta();
+  if (queue.length>1) toast('Blandet igen 🔀');
 }
 
 // ---------- account ----------
@@ -286,12 +335,16 @@ function wireEvents(){
   // flip navigation
   $('#flip-next').addEventListener('click', flipNext);
   $('#flip-prev').addEventListener('click', flipPrev);
-  // swipe left/right on the flip view
+  $('#flip-shuffle').addEventListener('click', reshuffle);
+  window.addEventListener('resize', ()=>{
+    if (mode==='flip' && !el.flip.hidden){ setCfSizes(); layoutCoverflow(); }
+  });
+  // swipe left/right through the rack
   let sx=0, sy=0;
-  el.flip.addEventListener('touchstart', (e)=>{ const t=e.changedTouches[0]; sx=t.clientX; sy=t.clientY; }, {passive:true});
-  el.flip.addEventListener('touchend', (e)=>{
+  el.coverflow.addEventListener('touchstart', (e)=>{ const t=e.changedTouches[0]; sx=t.clientX; sy=t.clientY; }, {passive:true});
+  el.coverflow.addEventListener('touchend', (e)=>{
     const t=e.changedTouches[0], dx=t.clientX-sx, dy=t.clientY-sy;
-    if (Math.abs(dx)>45 && Math.abs(dx)>Math.abs(dy)) (dx<0 ? flipNext() : flipPrev());
+    if (Math.abs(dx)>40 && Math.abs(dx)>Math.abs(dy)) (dx<0 ? flipNext() : flipPrev());
   }, {passive:true});
 
   el.sorts.addEventListener('click', (e)=>{
@@ -328,7 +381,7 @@ function toast(msg){
   clearTimeout(toastT); toastT=setTimeout(()=>n.remove(), 3200);
 }
 function registerSW(){
-  if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js?v=4').catch(()=>{});
+  if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js?v=5').catch(()=>{});
 }
 
 // Start only after the whole module has finished loading, so every const
