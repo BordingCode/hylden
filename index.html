@@ -5,12 +5,13 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1.0, user-scalable=no" />
   <meta name="theme-color" content="#2b1d14" />
   <title>Hylden — din pladehylde</title>
-  <link rel="manifest" href="manifest.json?v=3" />
+  <link rel="manifest" href="manifest.json?v=4" />
+  <link rel="icon" href="icons/icon-192.png" />
   <link rel="apple-touch-icon" href="icons/icon-192.png" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="apple-mobile-web-app-title" content="Hylden" />
-  <link rel="stylesheet" href="css/style.css?v=3" />
+  <link rel="stylesheet" href="css/style.css?v=4" />
 </head>
 <body>
   <div id="app">
@@ -28,16 +29,21 @@
 
     <!-- Toolbar (hidden until a collection is loaded) -->
     <nav class="toolbar" id="toolbar" hidden>
-      <div class="search-wrap">
-        <input id="search" type="search" placeholder="Søg i hylden…" autocomplete="off" />
+      <div class="viewtoggle" id="viewtoggle">
+        <button class="vt is-active" data-mode="flip">🎴 Bladr</button>
+        <button class="vt" data-mode="grid">▦ Hele hylden</button>
       </div>
-      <div class="sorts" id="sorts">
-        <button class="chip is-active" data-sort="added">Senest tilføjet</button>
-        <button class="chip" data-sort="artist">Kunstner</button>
-        <button class="chip" data-sort="year">Årstal</button>
-        <button class="chip" data-sort="color">Farve</button>
+      <div class="grid-controls" id="grid-controls" hidden>
+        <div class="search-wrap">
+          <input id="search" type="search" placeholder="Søg i hylden…" autocomplete="off" />
+        </div>
+        <div class="sorts" id="sorts">
+          <button class="chip is-active" data-sort="added">Senest tilføjet</button>
+          <button class="chip" data-sort="artist">Kunstner</button>
+          <button class="chip" data-sort="year">Årstal</button>
+          <button class="chip" data-sort="color">Farve</button>
+        </div>
       </div>
-      <button class="surprise" id="surprise">🎲 Overrask mig</button>
     </nav>
 
     <!-- Main content -->
@@ -58,6 +64,24 @@
           <button class="btn-ghost" id="try-demo">Se en demo først</button>
           <p class="reassure">Hylden ser aldrig dit kodeord, og det koster ingenting.</p>
         </div>
+      </section>
+
+      <!-- Flip view: one album at a time, always shuffled -->
+      <section class="flip" id="flip" hidden>
+        <div class="flip-stage" id="flip-stage">
+          <div class="flip-card" id="flip-card">
+            <div class="flip-cover"><img id="flip-img" alt="" /></div>
+            <h2 class="flip-title" id="flip-title"></h2>
+            <p class="flip-artist" id="flip-artist"></p>
+            <p class="flip-year" id="flip-year"></p>
+            <a id="flip-play" class="btn-spotify" target="_blank" rel="noopener">▶ Afspil i Spotify</a>
+          </div>
+        </div>
+        <div class="flip-nav">
+          <button id="flip-prev" class="flip-arrow" aria-label="Forrige">‹</button>
+          <button id="flip-next" class="flip-next">Næste plade ›</button>
+        </div>
+        <p class="flip-hint">Stryg til siden, eller tryk <b>Næste</b> · altid tilfældig rækkefølge</p>
       </section>
 
       <!-- The shelf -->
@@ -92,6 +116,6 @@
     </div>
   </div>
 
-  <script type="module" src="js/app.js?v=3"></script>
+  <script type="module" src="js/app.js?v=4"></script>
 </body>
 </html>

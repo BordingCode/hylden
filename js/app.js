@@ -7,21 +7,28 @@ import { demoAlbums } from './demo.js';
 const $ = (s) => document.querySelector(s);
 const el = {
   account:$('#account'), toolbar:$('#toolbar'), welcome:$('#welcome'),
+  flip:$('#flip'), flipCard:$('#flip-card'), flipImg:$('#flip-img'),
+  flipTitle:$('#flip-title'), flipArtist:$('#flip-artist'), flipYear:$('#flip-year'),
+  flipPlay:$('#flip-play'),
   shelfArea:$('#shelf-area'), shelf:$('#shelf'), loading:$('#loading'),
   loadingText:$('#loading-text'), count:$('#count'),
   rediscover:$('#rediscover'), rediscoverRow:$('#rediscover-row'),
-  search:$('#search'), sorts:$('#sorts'), surprise:$('#surprise'),
+  search:$('#search'), sorts:$('#sorts'),
+  viewtoggle:$('#viewtoggle'), gridControls:$('#grid-controls'),
   spotlight:$('#spotlight'),
 };
 
 let ALBUMS = [];        // full collection
-let view = [];          // filtered/sorted view
+let view = [];          // filtered/sorted view (grid)
 let sort = 'added';
 let query = '';
 let demo = false;
+let mode = 'flip';      // 'flip' (one at a time) | 'grid' (whole shelf)
+let queue = [];         // shuffled album order for flip view
+let qIndex = 0;
 
 // ---------- boot ----------
-(async function boot(){
+async function boot(){
   registerSW();
   try {
     if (location.search.includes('code=') || location.search.includes('error=')){
@@ -29,25 +36,28 @@ let demo = false;
     }
   } catch(e){ toast('Kunne ikke logge ind — prøv igen.'); }
 
-  if (isLoggedIn()){
+  wireEvents();
+  if (location.search.includes('demo')){      // shareable demo link
+    startDemo();
+  } else if (isLoggedIn()){
     showApp(); loadFromSpotify();
   } else {
     showWelcome();
   }
-  wireEvents();
-})();
+}
 
 // ---------- screens ----------
 function showWelcome(){
   el.welcome.hidden = false; el.toolbar.hidden = true;
-  el.shelfArea.hidden = true; el.loading.hidden = true;
+  el.shelfArea.hidden = true; el.flip.hidden = true; el.loading.hidden = true;
   el.account.innerHTML = '';
 }
 function showApp(){
   el.welcome.hidden = true;
 }
 function showLoading(text){
-  el.loading.hidden = false; el.shelfArea.hidden = true; el.toolbar.hidden = true;
+  el.loading.hidden = false; el.shelfArea.hidden = true; el.flip.hidden = true;
+  el.toolbar.hidden = true;
   if (text) el.loadingText.textContent = text;
 }
 
@@ -65,8 +75,7 @@ async function loadFromSpotify(){
     el.loading.hidden = true;
     if (!albums.length){ renderEmpty(); return; }
     primeColors(ALBUMS);
-    apply();
-    revealShelf();
+    enterApp();
   } catch(e){
     if (String(e.message).includes('not_authed')){ logout(); showWelcome(); }
     else { el.loadingText.textContent = 'Noget gik galt. Træk ned for at prøve igen.'; }
@@ -79,11 +88,61 @@ function startDemo(){
   showApp();
   el.account.innerHTML = `<button id="exit-demo">Demo · forbind rigtigt</button>`;
   $('#exit-demo').onclick = () => { if (hasClientId()) login(); else showWelcome(); };
-  apply(); revealShelf();
+  enterApp();
 }
 
-function revealShelf(){
-  el.loading.hidden = true; el.shelfArea.hidden = false; el.toolbar.hidden = false;
+// Show the app with both views ready; display whichever mode is active.
+function enterApp(){
+  el.loading.hidden = true; el.toolbar.hidden = false;
+  apply();          // populate grid + rediscover
+  buildQueue();     // shuffle for flip view
+  setMode(mode);
+}
+
+// ---------- flip view (one album at a time, shuffled) ----------
+function setMode(m){
+  mode = m;
+  el.viewtoggle.querySelectorAll('.vt').forEach(b=>b.classList.toggle('is-active', b.dataset.mode===m));
+  const flipMode = m==='flip';
+  el.flip.hidden = !flipMode;
+  el.shelfArea.hidden = flipMode;
+  el.gridControls.hidden = flipMode;
+  if (flipMode){ if (!queue.length) buildQueue(); showFlip(); }
+}
+
+function buildQueue(){ queue = sample(ALBUMS, ALBUMS.length); qIndex = 0; }
+
+function showFlip(dir){
+  const a = queue[qIndex];
+  if (!a) return;
+  el.flipImg.src = a.cover || a.coverSmall;
+  el.flipImg.alt = a.name;
+  el.flipTitle.textContent = a.name;
+  el.flipArtist.textContent = a.artist;
+  el.flipYear.textContent = a.year ? `Udgivet ${a.year}` : '';
+  el.flipPlay.href = a.url;
+  el.flipPlay.style.display = demo ? 'none' : '';
+  if (dir){
+    el.flipCard.classList.remove('in-right','in-left');
+    void el.flipCard.offsetWidth;                 // restart the animation
+    el.flipCard.classList.add(dir==='next'?'in-right':'in-left');
+  }
+}
+
+function flipNext(){
+  if (!queue.length) return;
+  qIndex++;
+  if (qIndex >= queue.length){                    // ran through all → reshuffle
+    const last = queue[queue.length-1];
+    buildQueue();
+    if (queue.length>1 && queue[0].id===last.id){ [queue[0],queue[1]]=[queue[1],queue[0]]; }
+  }
+  showFlip('next');
+}
+function flipPrev(){
+  if (!queue.length) return;
+  qIndex = qIndex>0 ? qIndex-1 : queue.length-1;
+  showFlip('prev');
 }
 
 // ---------- account ----------
@@ -153,7 +212,8 @@ function renderRediscover(){
 }
 
 function renderEmpty(){
-  el.loading.hidden = true; el.shelfArea.hidden = false; el.toolbar.hidden = false;
+  el.loading.hidden = true; el.flip.hidden = true; el.toolbar.hidden = true;
+  el.shelfArea.hidden = false;
   el.rediscover.hidden = true; el.count.textContent='';
   el.shelf.innerHTML = `<p class="empty">
     Din hylde er tom endnu.<br>
@@ -176,11 +236,6 @@ function openSpotlight(a, withAgain=false){
   el.spotlight.hidden = false;
 }
 function closeSpotlight(){ el.spotlight.hidden = true; }
-
-function surpriseMe(){
-  if (!ALBUMS.length) return;
-  openSpotlight(sample(ALBUMS,1)[0], true);
-}
 
 // ---------- colour extraction (for real covers) ----------
 function primeColors(albums){
@@ -222,7 +277,23 @@ function wireEvents(){
     else toast('Spotify-app mangler endnu — Mathias sætter den op.');
   });
   $('#try-demo')?.addEventListener('click', startDemo);
-  el.surprise.addEventListener('click', surpriseMe);
+
+  // view toggle: Bladr / Hele hylden
+  el.viewtoggle.addEventListener('click', (e)=>{
+    const b = e.target.closest('.vt'); if (!b) return;
+    setMode(b.dataset.mode);
+  });
+  // flip navigation
+  $('#flip-next').addEventListener('click', flipNext);
+  $('#flip-prev').addEventListener('click', flipPrev);
+  // swipe left/right on the flip view
+  let sx=0, sy=0;
+  el.flip.addEventListener('touchstart', (e)=>{ const t=e.changedTouches[0]; sx=t.clientX; sy=t.clientY; }, {passive:true});
+  el.flip.addEventListener('touchend', (e)=>{
+    const t=e.changedTouches[0], dx=t.clientX-sx, dy=t.clientY-sy;
+    if (Math.abs(dx)>45 && Math.abs(dx)>Math.abs(dy)) (dx<0 ? flipNext() : flipPrev());
+  }, {passive:true});
+
   el.sorts.addEventListener('click', (e)=>{
     const b = e.target.closest('.chip'); if (!b) return;
     el.sorts.querySelectorAll('.chip').forEach(c=>c.classList.remove('is-active'));
@@ -232,7 +303,13 @@ function wireEvents(){
     clearTimeout(t); t=setTimeout(()=>{ query = el.search.value.trim(); apply(); }, 120);
   });
   el.spotlight.addEventListener('click', (e)=>{ if (e.target.dataset.close!==undefined) closeSpotlight(); });
-  document.addEventListener('keydown', (e)=>{ if (e.key==='Escape') closeSpotlight(); });
+  document.addEventListener('keydown', (e)=>{
+    if (e.key==='Escape'){ closeSpotlight(); return; }
+    if (mode==='flip' && !el.flip.hidden && el.spotlight.hidden){
+      if (e.key==='ArrowRight') flipNext();
+      else if (e.key==='ArrowLeft') flipPrev();
+    }
+  });
 }
 
 // ---------- helpers ----------
@@ -251,5 +328,9 @@ function toast(msg){
   clearTimeout(toastT); toastT=setTimeout(()=>n.remove(), 3200);
 }
 function registerSW(){
-  if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js?v=1').catch(()=>{});
+  if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js?v=4').catch(()=>{});
 }
+
+// Start only after the whole module has finished loading, so every const
+// helper (escapeAttr, sample, …) is initialized before boot uses them.
+boot();
