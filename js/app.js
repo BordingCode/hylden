@@ -7,6 +7,7 @@ import { demoAlbums } from './demo.js';
 const $ = (s) => document.querySelector(s);
 const el = {
   account:$('#account'), toolbar:$('#toolbar'), welcome:$('#welcome'),
+  backdrop:$('#backdrop'),
   flip:$('#flip'), coverflow:$('#coverflow'), cfTrack:$('#cf-track'),
   flipTitle:$('#flip-title'), flipArtist:$('#flip-artist'), flipYear:$('#flip-year'),
   flipPlay:$('#flip-play'),
@@ -87,7 +88,7 @@ function startDemo(){
   demo = true;
   ALBUMS = demoAlbums();
   showApp();
-  el.account.innerHTML = `<button id="exit-demo">Demo · forbind rigtigt</button>`;
+  el.account.innerHTML = `<button id="exit-demo">Forbind</button>`;
   $('#exit-demo').onclick = () => { if (hasClientId()) login(); else showWelcome(); };
   enterApp();
 }
@@ -108,6 +109,7 @@ function setMode(m){
   el.flip.hidden = !flipMode;
   el.shelfArea.hidden = flipMode;
   el.gridControls.hidden = flipMode;
+  document.body.classList.toggle('grid-mode', !flipMode);
   if (flipMode){
     if (!queue.length) buildQueue();
     if (cfItems.length !== queue.length) buildCoverflow();
@@ -118,7 +120,7 @@ function setMode(m){
 function buildQueue(){ queue = sample(ALBUMS, ALBUMS.length); focused = 0; cfItems = []; }
 
 // itemsize scales with the screen; recomputed on resize
-function cfSize(){ return Math.min(Math.round(window.innerWidth*0.52), 210); }
+function cfSize(){ return Math.min(Math.round(window.innerWidth*0.72), 340); }
 
 function buildCoverflow(){
   el.cfTrack.innerHTML = '';
@@ -179,6 +181,7 @@ function updateFlipMeta(){
   el.flipYear.textContent = a.year ? `Udgivet ${a.year}` : '';
   el.flipPlay.href = a.url;
   el.flipPlay.style.display = demo ? 'none' : '';
+  el.backdrop.style.backgroundImage = `url("${a.cover || a.coverSmall}")`;
 }
 
 function setFocus(i){
@@ -191,7 +194,7 @@ function flipPrev(){ setFocus(focused-1); }
 
 function reshuffle(){
   buildQueue(); buildCoverflow(); layoutCoverflow(); updateFlipMeta();
-  if (queue.length>1) toast('Blandet igen 🔀');
+  if (queue.length>1) toast('Blandet igen');
 }
 
 // ---------- account ----------
@@ -381,7 +384,7 @@ function toast(msg){
   clearTimeout(toastT); toastT=setTimeout(()=>n.remove(), 3200);
 }
 function registerSW(){
-  if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js?v=5').catch(()=>{});
+  if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js?v=6').catch(()=>{});
 }
 
 // Start only after the whole module has finished loading, so every const
